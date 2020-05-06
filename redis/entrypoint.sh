@@ -4,25 +4,28 @@ SOCAT_SENTINEL_BASE=22379
 
 sentinel_conf="/data/sentinel.conf"
 redis_conf="/data/redis.conf"
+redis_extra_conf="/data/redis-extra.conf"
 state="new"
-if [[ -f "/data/dump.rdb" ]]; then
+
+if [[ -f "$redis_conf" ]]; then
   state="exist"
 fi
 
 if [[ "$state" == "new" ]]; then
   echo "[redis-entrypoint] I am a new redis instance"
-  cp -f /redis.conf.base $redis_conf
-  echo >> $redis_conf
+  echo "include /redis.conf.base" >> $redis_conf
+  echo "include $redis_extra_conf" >> $redis_conf
   echo "slave-announce-ip 127.0.0.1" >> $redis_conf
   echo "slave-announce-port $((${SOCAT_REDIS_BASE} + ${NODE_SEQ}))" >> $redis_conf
+fi
 
-  if [ -n "$SLAVE_PRIORITY" ]; then
-    echo "slave-priority $SLAVE_PRIORITY" >> $redis_conf
-  fi
-  if [ -n "$REDIS_PASSWORD" ]; then
-    echo "requirepass $REDIS_PASSWORD" >> $redis_conf
-    echo "masterauth $REDIS_PASSWORD" >> $redis_conf
-  fi
+echo > $redis_extra_conf
+if [ -n "$SLAVE_PRIORITY" ]; then
+  echo "slave-priority $SLAVE_PRIORITY" >> $redis_extra_conf
+fi
+if [ -n "$REDIS_PASSWORD" ]; then
+  echo "requirepass $REDIS_PASSWORD" >> $redis_extra_conf
+  echo "masterauth $REDIS_PASSWORD" >> $redis_extra_conf
 fi
 
 # Initialize socat
