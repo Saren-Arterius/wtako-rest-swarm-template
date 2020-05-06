@@ -1,0 +1,51 @@
+bootstrap:
+  dcs:
+    loop_wait: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      parameters: null
+      use_pg_rewind: true
+    retry_timeout: 10
+    ttl: 30
+  initdb:
+  - encoding: UTF8
+  - data-checksums
+  pg_hba:
+  - host replication replicator 127.0.0.1/32 md5
+  - host all all 0.0.0.0/0 md5
+  users:
+    admin:
+      options:
+      - createrole
+      - createdb
+      password: password_postgres
+etcd:
+  host: 127.0.0.1:2379
+name: postgresql1
+postgresql:
+  authentication:
+    replication:
+      password: password_postgres
+      username: replicator
+    rewind:
+      password: password_postgres
+      username: rewind_user
+    superuser:
+      password: password_postgres
+      username: postgres
+  config_dir: config/
+  connect_address: 127.0.0.1:5433
+  data_dir: data/postgresql1
+  listen: 127.0.0.1:5433
+  parameters:
+    unix_socket_directories: .
+  pgpass: /tmp/pgpass1
+restapi:
+  connect_address: 127.0.0.1:8009
+  listen: 127.0.0.1:8009
+scope: batman
+tags:
+  clonefrom: false
+  nofailover: false
+  noloadbalance: false
+  nosync: false

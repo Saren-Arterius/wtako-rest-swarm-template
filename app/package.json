@@ -1,0 +1,55 @@
+{
+  "name": "wtako-rest-swarm-template",
+  "version": "0.0.0",
+  "private": true,
+  "nodemonConfig": {
+    "watch": [
+      "src/*"
+    ]
+  },
+  "scripts": {
+    "start": "sh -c 'cd dist && node bin/server.js'",
+    "clean": "rm -rf dist && mkdir dist",
+    "dev": "npm run build-watch & sleep 5 && nodemon --exec sh -c 'npm start'",
+    "prod": "npm run build && npm start",
+    "build": "babel src --out-dir dist --copy-files",
+    "build-watch": "babel src --out-dir dist --copy-files --watch"
+  },
+  "dependencies": {
+    "@hapi/boom": "^9.0.0",
+    "body-parser": "^1.19.0",
+    "bull": "^3.13.0",
+    "cheerio": "^1.0.0-rc.3",
+    "cjk-count": "^1.0.3",
+    "crypto-js": "^4.0.0",
+    "express": "^4.17.1",
+    "express-cluster": "0.0.5",
+    "firebase-admin": "^8.9.2",
+    "ioredis": "^4.16.3",
+    "jsbn": "^1.1.0",
+    "jsonwebtoken": "^8.5.1",
+    "knex": "^0.21.0",
+    "moment": "^2.24.0",
+    "morgan": "^1.9.1",
+    "multer": "^1.4.2",
+    "mz": "^2.7.0",
+    "object-assign-deep": "^0.4.0",
+    "pg": "^8.0.3",
+    "request": "^2.88.2",
+    "request-promise": "^4.2.5"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.2",
+    "@types/knex": "^0.16.1",
+    "babel-cli": "^6.26.0",
+    "babel-eslint": "^8.2.6",
+    "babel-plugin-transform-flow-strip-types": "^6.22.0",
+    "babel-preset-env": "^1.7.0",
+    "eslint": "^4.11.0",
+    "eslint-config-airbnb": "^16.1.0",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-jsx-a11y": "^6.0.2",
+    "eslint-plugin-node": "^5.2.1",
+    "eslint-plugin-react": "^7.5.1"
+  }
+}

@@ -1,0 +1,219 @@
+version: '3.8'
+configs:
+  redis-conf:
+    file: ./redis/redis.conf.base
+  phpredmin-conf:
+    file: ./phpredmin/config.dist.php
+volumes:
+  etcd-data-1: null
+  etcd-data-2: null
+  etcd-data-3: null
+  patroni-pg-data-1: null
+  patroni-pg-data-2: null
+  patroni-pg-data-3: null
+  pgadmin-data: null
+  redis-data-1: null
+  redis-data-2: null
+  redis-data-3: null
+services:
+  app:
+    build: ./app
+    depends_on:
+    - haproxy
+    deploy:
+      mode: global
+    environment:
+      PROD: ${PROD}
+    image: 127.0.0.1:3333/${SERVICE_NAME}_app
+    ports:
+    - 31380:3000
+  etcd1:
+    build: ./patroni
+    command: etcd -name etcd1 -initial-advertise-peer-urls http://etcd1:2380
+    deploy:
+      placement:
+        constraints:
+        - node.labels.id == db1
+    env_file: patroni/docker/etcd.env
+    hostname: etcd1
+    image: 127.0.0.1:3333/patroni
+    volumes:
+    - etcd-data-1:/home/postgres
+  etcd2:
+    build: ./patroni
+    command: etcd -name etcd2 -initial-advertise-peer-urls http://etcd2:2380
+    deploy:
+      placement:
+        constraints:
+        - node.labels.id == db2
+    env_file: patroni/docker/etcd.env
+    hostname: etcd2
+    image: 127.0.0.1:3333/patroni
+    volumes:
+    - etcd-data-2:/home/postgres
+  etcd3:
+    build: ./patroni
+    command: etcd -name etcd3 -initial-advertise-peer-urls http://etcd3:2380
+    deploy:
+      placement:
+        constraints:
+        - node.labels.id == db3
+    env_file: patroni/docker/etcd.env
+    hostname: etcd3
+    image: 127.0.0.1:3333/patroni
+    volumes:
+    - etcd-data-3:/home/postgres
+  haproxy:
+    build: ./patroni
+    command: haproxy
+    deploy:
+      mode: global
+      placement:
+        constraints:
+        - node.labels.type == db
+    env_file: patroni/docker/patroni.env
+    hostname: haproxy
+    image: 127.0.0.1:3333/patroni
+    ports:
+    - 5000:5000
+    - 5001:5001
+  patroni1:
+    build: ./patroni
+    deploy:
+      placement:
+        constraints:
+        - node.labels.id == db1
+    env_file: patroni/docker/patroni.env
+    environment:
+      PATRONI_NAME: patroni1
+      PATRONI_POSTGRES_PORT: '5432'
+      PATRONI_POSTGRES_YML: postgres0.yml
+      PATRONI_RESTAPI_PORT: '8008'
+    hostname: patroni1
+    image: 127.0.0.1:3333/patroni
+    volumes:
+    - patroni-pg-data-1:/home/postgres
+  patroni2:
+    build: ./patroni
+    deploy:
+      placement:
+        constraints:
+        - node.labels.id == db2
+    env_file: patroni/docker/patroni.env
+    environment:
+      PATRONI_NAME: patroni2
+      PATRONI_POSTGRES_PORT: '5433'
+      PATRONI_POSTGRES_YML: postgres1.yml
+      PATRONI_RESTAPI_PORT: '8009'
+    hostname: patroni2
+    image: 127.0.0.1:3333/patroni
+    volumes:
+    - patroni-pg-data-2:/home/postgres
+  patroni3:
+    build: ./patroni
+    deploy:
+      placement:
+        constraints:
+        - node.labels.id == db3
+    env_file: patroni/docker/patroni.env
+    environment:
+      PATRONI_NAME: patroni3
+      PATRONI_POSTGRES_PORT: '5434'
+      PATRONI_POSTGRES_YML: postgres2.yml
+      PATRONI_RESTAPI_PORT: '8010'
+    hostname: patroni3
+    image: 127.0.0.1:3333/patroni
+    volumes:
+    - patroni-pg-data-3:/home/postgres
+  pgadmin:
+    build: ./pgadmin
+    command: /bin/bash /entry.sh
+    depends_on:
+    - haproxy
+    deploy:
+      placement:
+        constraints:
+        - node.labels.id == db1
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: password_pgadmin
+    image: 127.0.0.1:3333/${SERVICE_NAME}_pgadmin
+    ports:
+    - 31300:80
+    volumes:
+    - pgadmin-data:/var/lib/pgadmin
+  phpredmin:
+    deploy:
+      placement:
+        constraints:
+        - node.labels.id == db1
+    image: sasanrose/phpredmin
+    ports:
+    - 31301:80
+    configs:
+    - source: phpredmin-conf
+      target: /var/www/html/phpredmin/config.dist.php
+      mode: 0755
+  redis1:
+    build: ./redis
+    deploy:
+      placement:
+        constraints:
+        - node.labels.id == db1
+    env_file: redis/redis.env
+    environment:
+      NODE_SEQ: 1
+      SLAVE_PRIORITY: 10
+      TOTAL_NODES: 3
+    hostname: redis1
+    stop_grace_period: 1m
+    image: 127.0.0.1:3333/${SERVICE_NAME}_redis
+    volumes:
+    - redis-data-1:/data
+    ports:
+    - 6379:6379
+    - 36379:36379
+    configs:
+    - source: redis-conf
+      target: /redis.conf.base
+      mode: 0755
+  redis2:
+    build: ./redis
+    deploy:
+      placement:
+        constraints:
+        - node.labels.id == db2
+    env_file: redis/redis.env
+    environment:
+      INIT_SLAVE_OF: 1
+      NODE_SEQ: 2
+      TOTAL_NODES: 3
+    hostname: redis2
+    stop_grace_period: 1m
+    image: 127.0.0.1:3333/${SERVICE_NAME}_redis
+    volumes:
+    - redis-data-2:/data
+    configs:
+    - source: redis-conf
+      target: /redis.conf.base
+      mode: 0755
+  redis3:
+    build: ./redis
+    deploy:
+      placement:
+        constraints:
+        - node.labels.id == db3
+    env_file: redis/redis.env
+    environment:
+      INIT_SLAVE_OF: 1
+      NODE_SEQ: 3
+      TOTAL_NODES: 3
+    hostname: redis3
+    stop_grace_period: 1m
+    image: 127.0.0.1:3333/${SERVICE_NAME}_redis
+    volumes:
+    - redis-data-3:/data
+    configs:
+    - source: redis-conf
+      target: /redis.conf.base
+      mode: 0755
