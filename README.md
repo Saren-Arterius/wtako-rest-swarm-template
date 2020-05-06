@@ -29,7 +29,7 @@ A high-availability, load-balanced express.js + postgresql + redis + db admin pa
 4. Open http://127.0.0.1:3000/health or `$ curl http://127.0.0.1:3000/health`
 5. Nodemon will restart web for you if any code changed.
 6. To update and deploy to production: `$ ./deploy.sh`
-7. Use `$ REDISCLI_AUTH=password_redis redis-cli -p 6379 info replication` to check if redis1 is master, and force switchover to redis1 using `$ redis-cli -p 36379 sentinel failover mn`.
+7. Use `$ REDISCLI_AUTH=password_redis redis-cli -p 6379 info replication` to check if redis1 is master. To force switchover to redis1, use `$ REDISCLI_AUTH=password_redis redis-cli -p 36379 sentinel failover mn`.
 
 # Access pgAdmin
 (Requires stack up, assume you are on db1)
