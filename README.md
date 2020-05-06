@@ -76,7 +76,7 @@ For redis, you need to remove the stack (see below, but dont prune volumes). Go 
 - password_redis
 
 # Caveats
-Patroni scaling is messy. 
+### Patroni scaling is messy. 
 
 Apart from the fact that it's hard to scale etcd here, pgroonga is not really compatible with pg_basebackup:
 ```
@@ -84,3 +84,8 @@ WARNING:  could not verify checksum in file "./base/16386/pgrn", block 0: read b
 pg_basebackup: error: COPY stream ended before last file was finished
 ```
 For scaling up from 2(+) nodes, perform manual switchover may workaround such a problem. However, for scaling up from 1 node, the best way should be: backup, start over, and restore.
+
+### Security
+By default any `PORT: ...` writting in `docker-compose.yml` will be binded to 0.0.0.0 and very likely is exposed to internet, thank to https://github.com/moby/moby/issues/32299. This is hard to tackle since you have to SSH into every node and hopefully deny access with correct iptables rules.
+
+TODO: create a ssh server just for authenticated port forwarding, for admin panels.
