@@ -10,8 +10,11 @@ A high-availability, load-balanced express.js + postgresql + redis + db admin pa
 
 # Deploy environment
 1. Initialize a swarm if needed: `$ docker swarm init`
-2. Add a db1 label to your node for database servers to be sticky: `$ docker node update --label-add id=db1 $(hostname)`
-3. For single node machine, `$ python3 scale-patroni.py 1` and `$ python3 scale-redis.py 1` to scale down. Otherwise you may scale up (`$ python3 scale-patroni.py [n]` and `$ python3 scale-redis.py [n]`), and add `db2`, `db3`, ..., `db[n]` labels to other nodes.
+2. For single node machine, `$ python3 scale-patroni.py 1` and `$ python3 scale-redis.py 1` to scale down. Otherwise you may scale up (`$ python3 scale-patroni.py [n]` and `$ python3 scale-redis.py [n]`). By default n=3.
+3. Add docker node labels:
+  - `id=db1` label to development/controller node: `$ docker node update --label-add id=db1 $(hostname)`
+  - `id=db2`, `id=db3`, ..., `id=db[n]` labels to other nodes for database servers to be sticky.
+  - `type=db` to all database nodes: `$ docker node update --label-add type=db [hostname]` 
 4. Add a local and volatile docker image registry for images to work: `$ docker service create --name registry --constraint node.id==db1 --publish=3333:5000 -e REGISTRY_HTTP_ADDR=0.0.0.0:5000 registry:latest`. If db1 is offline, new nodes could not get images from the registry.
 5. `$ ./deploy.sh` and wait.
 6. After the command finished, wait for 2 minutes more for postgres to initialize.
