@@ -25,6 +25,7 @@ A high-availability, load-balanced express.js + postgresql + redis + db admin pa
 - password_phpredmin
 - password_admin_panel
 - password_redis
+- password_ssh
 
 # Accessing 
 ## web prod + health check
@@ -32,8 +33,13 @@ A high-availability, load-balanced express.js + postgresql + redis + db admin pa
 1. Open http://127.0.0.1:31380/health or `$ curl http://127.0.0.1:31380/health`
 2. In the JSON output, `sequence` indicates redis health/consistency, and `log_count` indicates postgres health/consistency.
 
+## Stack internal services
+Because docker swarm exposes ports to either only inside containers or 0.0.0.0, access to any stack internal services (pgadmin, redis etc) should be proxied by ssh server instead of open to internet.
+
+Use the command: `$ while true; do ssh root@127.0.0.1 -p 2222 -L 5000:haproxy:5000 -L 5001:haproxy:5001 -L 6379:redis1:6379 -L 31300:pgadmin:80 -L 31301:phpredmin:80; sleep 1; done`. The default password is `password_ssh` if you are asked. By the way, `ssh/authorized_keys` must also be updated to your keys or being emptied, unless you want to give me access to your server.
+
 ## web dev
-(Requires stack up, assume you are on db1 and redis1 is master)
+(Requires stack up and ssh, assume you are on db1 and redis1 is master)
 1. `$ cd app`
 2. `$ npm install`
 3. `$ npm run dev`
@@ -43,13 +49,13 @@ A high-availability, load-balanced express.js + postgresql + redis + db admin pa
 7. Use `$ REDISCLI_AUTH=password_redis redis-cli -p 6379 info replication` to check if redis1 is master. To force switchover to redis1, use `$ REDISCLI_AUTH=password_redis redis-cli -p 36379 sentinel failover mn`.
 
 ## pgAdmin
-(Requires stack up, assume you are on db1)
+(Requires stack up and ssh, assume you are on db1)
 1. Open http://127.0.0.1:31300/browser/
 2. Login (email: admin@example.com, password: password_pgadmin)
 3. Create new server (host: haproxy, port: 5000, username: postgres, password: password_postgres)
 
 ## phpredmin
-(Requires stack up)
+(Requires stack up and ssh)
 3. Open http://127.0.0.1:31301
 4. Login (username: admin, password: password_phpredmin)
 
@@ -90,4 +96,4 @@ For scaling up from 2(+) nodes, perform manual switchover may workaround such a 
 ## Security.
 By default any `PORT: ...` writting in `docker-compose.yml` will be binded to 0.0.0.0 and very likely is exposed to internet, thanks to https://github.com/moby/moby/issues/32299. This is hard to tackle since you have to SSH into every node and hopefully deny access with correct iptables rules.
 
-TODO: create a ssh server just for authenticated port forwarding, for admin panels.
+To workaround this issue for admin panels and development use, a ssh server is bundled just for authenticated port forwarding.

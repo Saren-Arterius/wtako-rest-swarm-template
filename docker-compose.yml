@@ -4,6 +4,8 @@ configs:
     file: ./redis/redis.conf.base
   phpredmin-conf:
     file: ./phpredmin/config.dist.php
+  ssh-authorized_keys:
+    file: ./ssh/authorized_keys
 volumes:
   etcd-data-1: null
   etcd-data-2: null
@@ -27,6 +29,21 @@ services:
     image: 127.0.0.1:3333/${SERVICE_NAME}_app
     ports:
     - 31380:3000
+  ssh:
+    build: ./ssh
+    deploy:
+      placement:
+        constraints:
+        - node.labels.id == db1
+    image: 127.0.0.1:3333/${SERVICE_NAME}_ssh
+    ports:
+    - 2222:22
+    configs:
+    - source: ssh-authorized_keys
+      target: /root/.ssh/authorized_keys
+      mode: 0644
+    environment:
+      ROOT_PASSWORD: password_ssh # Empty to allow key only login
   etcd1:
     build: ./patroni
     command: etcd -name etcd1 -initial-advertise-peer-urls http://etcd1:2380
@@ -74,9 +91,6 @@ services:
     env_file: patroni/docker/patroni.env
     hostname: haproxy
     image: 127.0.0.1:3333/patroni
-    ports:
-    - 5000:5000
-    - 5001:5001
   patroni1:
     build: ./patroni
     deploy:
@@ -138,8 +152,6 @@ services:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
       PGADMIN_DEFAULT_PASSWORD: password_pgadmin
     image: 127.0.0.1:3333/${SERVICE_NAME}_pgadmin
-    ports:
-    - 31300:80
     volumes:
     - pgadmin-data:/var/lib/pgadmin
   phpredmin:
@@ -148,8 +160,6 @@ services:
         constraints:
         - node.labels.id == db1
     image: sasanrose/phpredmin
-    ports:
-    - 31301:80
     configs:
     - source: phpredmin-conf
       target: /var/www/html/phpredmin/config.dist.php
@@ -170,9 +180,6 @@ services:
     image: 127.0.0.1:3333/${SERVICE_NAME}_redis
     volumes:
     - redis-data-1:/data
-    ports:
-    - 6379:6379
-    - 36379:36379
     configs:
     - source: redis-conf
       target: /redis.conf.base
@@ -217,3 +224,4 @@ services:
     - source: redis-conf
       target: /redis.conf.base
       mode: 0755
+      
