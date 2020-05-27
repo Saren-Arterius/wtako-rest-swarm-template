@@ -132,15 +132,15 @@ ENV LC_ALL=$LC_ALL LANG=$LANG EDITOR=/usr/bin/editor
 ENV PGDATA=$PGDATA PATH=$PATH:$PGBIN
 
 ## PG Extensions
-RUN apt update && apt install -y git wget build-essential libpq-dev postgresql-server-dev-12 gnupg2
+RUN apt update && apt install -y git wget build-essential libpq-dev postgresql-server-dev-$PG_MAJOR gnupg2
 
 # pgroonga
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list \
         && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
-        && wget https://packages.groonga.org/debian/groonga-archive-keyring-latest-stretch.deb \
-        && apt install -y -V ./groonga-archive-keyring-latest-stretch.deb \
+        && wget https://packages.groonga.org/debian/groonga-archive-keyring-latest-buster.deb \
+        && apt install -y -V ./groonga-archive-keyring-latest-buster.deb \
         && apt update \
-        && apt install -y postgresql-12-pgroonga groonga-tokenizer-mecab
+        && apt install -y postgresql-$PG_MAJOR-pgroonga groonga-tokenizer-mecab
 
 # pg-spgist
 RUN git clone https://github.com/fake-name/pg-spgist_hamming.git \
