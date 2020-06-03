@@ -24,8 +24,8 @@ RUN set -ex \
     && apt-cache depends patroni | sed -n -e 's/.*Depends: \(python3-.\+\)$/\1/p' \
             | grep -Ev '^python3-(sphinx|etcd|consul|kazoo|kubernetes)' \
             | xargs apt-get install -y vim curl less jq locales haproxy sudo \
-                            python3-etcd python3-kazoo python3-pip busybox \
-                            net-tools iputils-ping --fix-missing \
+                            python3-etcd python3-kazoo python3-pip python3-setuptools busybox build-essential golang \
+                            git net-tools iputils-ping --fix-missing \
     && pip3 install dumb-init \
 \
     # Cleanup all locales but en_US.UTF-8
@@ -49,18 +49,30 @@ RUN set -ex \
     && sed -i "s|/var/lib/postgresql.*|$PGHOME:/bin/bash|" /etc/passwd \
     && chown -R postgres:postgres /var/log \
 \
-    # Download etcd
-    && curl -sL https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-amd64.tar.gz \
-            | tar xz -C /usr/local/bin --strip=1 --wildcards --no-anchored etcd etcdctl \
+    # Build etcd
+    && git clone https://github.com/etcd-io/etcd.git \
+    && cd etcd \
+    && git checkout v${ETCDVERSION} \
+    && ./build \
+    && mv bin/etcd /usr/local/bin \
+    && mv bin/etcdctl /usr/local/bin \
+    && cd .. \
+    && rm -rf etcd \
 \
-    # Download confd
-    && curl -sL https://github.com/kelseyhightower/confd/releases/download/v${CONFDVERSION}/confd-${CONFDVERSION}-linux-amd64 \
-            > /usr/local/bin/confd && chmod +x /usr/local/bin/confd \
-\
+    # Build confd
+    && git clone https://github.com/kelseyhightower/confd.git \
+    && cd confd \
+    && git checkout v${CONFDVERSION} \
+    && (go get || true) \
+    && make \
+    && mv bin/confd /usr/local/bin \
+    && cd .. \
+    && rm -rf confd
+
     # Clean up all useless packages and some files
-    && apt-get purge -y --allow-remove-essential python3-pip gzip bzip2 util-linux e2fsprogs \
+RUN apt-get purge -y --allow-remove-essential python3-pip gzip bzip2 util-linux e2fsprogs \
                 libmagic1 bsdmainutils login ncurses-bin libmagic-mgc e2fslibs bsdutils \
-                exim4-config gnupg-agent dirmngr libpython2.7-stdlib libpython2.7-minimal \
+                exim4-config gnupg-agent dirmngr libpython2.7-stdlib libpython2.7-minimal golang build-essential \
     && apt-get autoremove -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/* \
@@ -89,8 +101,7 @@ RUN set -ex \
 #        /var/lib/dpkg/info/* \
     && find /usr/bin -xtype l -delete \
     && find /var/log -type f -exec truncate --size 0 {} \; \
-    && find /usr/lib/python3/dist-packages -name '*test*' | xargs rm -fr \
-    && find /lib/x86_64-linux-gnu/security -type f ! -name pam_env.so ! -name pam_permit.so ! -name pam_unix.so -delete
+    && find /usr/lib/python3/dist-packages -name '*test*' | xargs rm -fr
 
 # perform compression if it is necessary
 ARG COMPRESS
