@@ -247,6 +247,7 @@ class Bootstrap(object):
                 self._postgresql.remove_data_directory()
             try:
                 ret = self._postgresql.cancellable.call([self._postgresql.pgcommand('pg_basebackup'),
+                                                         '--no-verify-checksums',
                                                          '--pgdata=' + self._postgresql.data_dir, '-X', 'stream',
                                                          '--dbname=' + conn_url] + user_options, env=env)
                 if ret == 0:
