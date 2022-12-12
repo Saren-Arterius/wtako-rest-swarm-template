@@ -22,7 +22,7 @@
     "cheerio": "^1.0.0-rc.3",
     "cjk-count": "^1.0.3",
     "crypto-js": "^4.0.0",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "express-cluster": "0.0.5",
     "firebase-admin": "^8.9.2",
     "ioredis": "^4.16.3",
