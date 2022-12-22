@@ -27,7 +27,7 @@
     "firebase-admin": "^8.9.2",
     "ioredis": "^4.16.3",
     "jsbn": "^1.1.0",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "knex": "^0.21.0",
     "moment": "^2.24.0",
     "morgan": "^1.9.1",
